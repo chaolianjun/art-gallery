@@ -1,0 +1,2578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子画册 — 人物卷 & 童趣卷</title>
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+    background: #f5f0e8;
+    color: #2c2416;
+    line-height: 1.6;
+    overflow-x: hidden;
+    padding-top: 52px; /* space for volume-tabs */
+}
+
+/* ========== VOLUME TAB BAR ========== */
+.volume-tabs {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: rgba(245,240,232,0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139,115,85,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    z-index: 5000;
+}
+.volume-tab {
+    padding: 12px 36px;
+    border: none;
+    background: transparent;
+    color: #8b7355;
+    font-family: inherit;
+    font-size: 1.05rem;
+    cursor: pointer;
+    letter-spacing: 0.2em;
+    transition: all 0.3s ease;
+    position: relative;
+    border-radius: 0;
+}
+.volume-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: #c41e3a;
+    transition: width 0.3s ease;
+}
+.volume-tab:hover {
+    color: #2c2416;
+}
+.volume-tab:hover::after {
+    width: 40%;
+}
+.volume-tab.active {
+    color: #c41e3a;
+    font-weight: 700;
+}
+.volume-tab.active::after {
+    width: 60%;
+}
+.volume-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(139,115,85,0.25);
+}
+
+/* ========== VOLUME CONTAINERS ========== */
+.volume-container {
+    display: none;
+}
+.volume-container.active {
+    display: block;
+}
+
+/* ========== SHARED CSS (from 人物卷 + 童趣卷) ========== */
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+    background: #f5f0e8;
+    color: #2c2416;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #e8e0d0; }
+::-webkit-scrollbar-thumb { background: #8b7355; border-radius: 4px; }
+
+/* ========== COVER ========== */
+.cover {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, #f5f0e8 0%, #e8dcc8 50%, #d4c4a8 100%);
+    position: relative;
+    overflow: hidden;
+}
+.cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(139,115,85,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(196,30,58,0.05) 0%, transparent 50%);
+}
+.cover-seal {
+    width: 80px; height: 80px;
+    border: 3px solid #c41e3a;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #c41e3a; font-size: 14px; font-weight: bold;
+    margin-bottom: 30px;
+    transform: rotate(-15deg);
+    opacity: 0.7;
+}
+.cover-title {
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: #2c2416;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    z-index: 1;
+}
+.cover-subtitle {
+    font-size: clamp(1rem, 3vw, 1.8rem);
+    color: #8b7355;
+    margin-top: 20px;
+    letter-spacing: 0.5em;
+    z-index: 1;
+}
+.cover-line {
+    width: 120px; height: 2px;
+    background: linear-gradient(90deg, transparent, #c41e3a, transparent);
+    margin: 30px 0;
+    z-index: 1;
+}
+.cover-info {
+    font-size: 0.95rem;
+    color: #8b7355;
+    z-index: 1;
+    letter-spacing: 0.2em;
+}
+.cover-scroll {
+    position: absolute;
+    bottom: 40px;
+    animation: bounce 2s infinite;
+    color: #8b7355;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    z-index: 1;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+}
+.cover-brush {
+    position: absolute;
+    font-size: clamp(8rem, 20vw, 18rem);
+    color: rgba(44,36,22,0.04);
+    font-weight: 900;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+}
+.cover-brush.left { top: 10%; left: 5%; }
+.cover-brush.right { bottom: 10%; right: 5%; }
+
+/* ========== NAV ========== */
+.nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(245,240,232,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(139,115,85,0.2);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    z-index: 1000;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+.nav.visible { transform: translateY(0); }
+.nav-brand {
+    font-size: 1.2rem; font-weight: 700;
+    color: #2c2416; letter-spacing: 0.15em;
+}
+.nav-links { display: flex; gap: 20px; }
+.nav-links a {
+    color: #8b7355; text-decoration: none;
+    font-size: 0.85rem; letter-spacing: 0.1em;
+    transition: color 0.2s;
+}
+.nav-links a:hover { color: #c41e3a; }
+.nav-toggle {
+    background: none; border: none;
+    font-size: 1.5rem; cursor: pointer;
+    color: #2c2416; display: none;
+}
+.nav-modes {
+    display: flex; gap: 8px;
+}
+.nav-modes button {
+    padding: 6px 14px;
+    border: 1px solid #8b7355;
+    background: transparent;
+    color: #8b7355;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-radius: 3px;
+    font-family: inherit;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+}
+.nav-modes button.active {
+    background: #c41e3a;
+    color: white;
+    border-color: #c41e3a;
+}
+.nav-modes button:hover:not(.active) {
+    border-color: #c41e3a;
+    color: #c41e3a;
+}
+
+/* ========== SECTION / CHAPTER ========== */
+.section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 80px 40px;
+}
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+}
+.section-header::after {
+    content: '';
+    display: block;
+    width: 60px; height: 3px;
+    background: #c41e3a;
+    margin: 20px auto 0;
+}
+.section-num {
+    font-size: 0.8rem;
+    color: #c41e3a;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+}
+.section-title {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    color: #2c2416;
+    margin: 10px 0;
+    letter-spacing: 0.15em;
+}
+.section-subtitle {
+    font-size: 1rem;
+    color: #8b7355;
+    letter-spacing: 0.2em;
+}
+
+/* ========== GRID ========== */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+}
+@media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .section { padding: 50px 16px; }
+}
+
+/* ========== CARD ========== */
+.card {
+    position: relative;
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.35s ease;
+    box-shadow: 0 2px 12px rgba(44,36,22,0.08);
+    aspect-ratio: 3/4;
+}
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(44,36,22,0.15);
+}
+.card-img-wrap {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: #f0ebe3;
+}
+.card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.card:hover img {
+    transform: scale(1.05);
+}
+.card-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(44,36,22,0.85));
+    color: white;
+    padding: 30px 14px 12px;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+}
+
+/* ========== TOC ========== */
+.toc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.toc-card {
+    display: block;
+    padding: 28px 24px;
+    background: white;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #2c2416;
+    border-left: 4px solid #c41e3a;
+    box-shadow: 0 2px 12px rgba(44,36,22,0.08);
+    transition: all 0.3s ease;
+}
+.toc-card:hover {
+    transform: translateX(6px);
+    box-shadow: 0 6px 20px rgba(44,36,22,0.12);
+}
+.toc-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+}
+.toc-card-sub {
+    font-size: 0.85rem;
+    color: #8b7355;
+    letter-spacing: 0.08em;
+}
+.toc-card-count {
+    font-size: 0.75rem;
+    color: #c41e3a;
+    margin-top: 8px;
+    letter-spacing: 0.1em;
+}
+
+/* ========== LIGHTBOX ========== */
+.lightbox {
+    position: fixed; inset: 0;
+    background: rgba(20,16,10,0.97);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.lightbox.active {
+    display: flex;
+    opacity: 1;
+}
+.lightbox-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 2px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+.lightbox-close {
+    position: absolute; top: 20px; right: 24px;
+    background: none; border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 2rem; cursor: pointer;
+    z-index: 2001;
+    transition: color 0.2s;
+}
+.lightbox-close:hover { color: white; }
+.lightbox-prev, .lightbox-next {
+    position: absolute; top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: none; color: rgba(255,255,255,0.7);
+    font-size: 2rem; cursor: pointer;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    z-index: 2001;
+}
+.lightbox-prev { left: 20px; }
+.lightbox-next { right: 20px; }
+.lightbox-prev:hover, .lightbox-next:hover {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+.lightbox-caption {
+    position: absolute;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.7);
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-align: center;
+    z-index: 2001;
+}
+.lightbox-counter {
+    position: absolute;
+    top: 20px; left: 24px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    z-index: 2001;
+}
+
+/* ========== FLIP BOOK MODE ========== */
+.flip-mode {
+    display: none;
+    position: fixed; inset: 0;
+    background: #f5f0e8;
+    z-index: 3000;
+    flex-direction: column;
+}
+.flip-mode.active { display: flex; }
+.flip-topbar {
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: rgba(245,240,232,0.98);
+    border-bottom: 1px solid rgba(139,115,85,0.2);
+    z-index: 10;
+}
+.flip-topbar .nav-modes button {
+    font-size: 0.75rem; padding: 5px 10px;
+}
+.flip-close {
+    background: none; border: none;
+    font-size: 1.3rem; cursor: pointer;
+    color: #2c2416;
+}
+.flip-viewport {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+.flip-page {
+    max-width: 85vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 2px;
+    box-shadow: 0 8px 40px rgba(44,36,22,0.2);
+    transition: opacity 0.3s ease;
+}
+.flip-page.fade-out { opacity: 0; }
+.flip-arrow {
+    position: absolute; top: 50%;
+    transform: translateY(-50%);
+    background: rgba(44,36,22,0.08);
+    border: none;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #2c2416;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+.flip-arrow:hover {
+    background: rgba(44,36,22,0.15);
+}
+.flip-arrow.left { left: 20px; }
+.flip-arrow.right { right: 20px; }
+.flip-info {
+    text-align: center;
+    padding: 16px;
+    color: #8b7355;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+}
+.flip-progress {
+    width: 200px; height: 3px;
+    background: rgba(139,115,85,0.2);
+    border-radius: 2px;
+    margin: 8px auto 0;
+    overflow: hidden;
+}
+.flip-progress-bar {
+    height: 100%;
+    background: #c41e3a;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ========== FOOTER ========== */
+.footer {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8b7355;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    border-top: 1px solid rgba(139,115,85,0.15);
+    margin-top: 40px;
+}
+
+/* ========== PAGE DIVIDER (ink wash style) ========== */
+.page-divider {
+    height: 120px;
+    background: linear-gradient(180deg, #f5f0e8, #e8dcc8, #f5f0e8);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+}
+.page-divider::before {
+    content: '❋';
+    color: rgba(196,30,58,0.3);
+    font-size: 1.5rem;
+}
+
+/* ========== CHAPTER NAV ========== */
+.chapter-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+}
+.chapter-nav a {
+    padding: 8px 18px;
+    border: 1px solid rgba(139,115,85,0.3);
+    border-radius: 20px;
+    text-decoration: none;
+    color: #8b7355;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+}
+.chapter-nav a:hover, .chapter-nav a.active {
+    background: #c41e3a;
+    color: white;
+    border-color: #c41e3a;
+}
+
+/* ========== BACK TO TOP ========== */
+.back-top {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    width: 48px; height: 48px;
+    background: #c41e3a;
+    color: white;
+    border: none; border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(196,30,58,0.3);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 900;
+    transition: all 0.3s;
+}
+.back-top.visible { display: flex; }
+.back-top:hover { transform: scale(1.1); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .nav-links { display: none; }
+    .nav-toggle { display: block; }
+    .cover-title { letter-spacing: 0.15em; }
+    .flip-arrow { width: 40px; height: 40px; font-size: 1.2rem; }
+}
+
+/* 童趣卷: cover deco */
+.cover-deco {
+    position: absolute;
+    font-size: clamp(6rem, 16vw, 14rem);
+    color: rgba(44,36,22,0.04);
+    font-weight: 900;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+}
+.cover-deco.l { top: 8%; left: 5%; }
+.cover-deco.r { bottom: 8%; right: 5%; }
+
+/* ========== 童趣卷 unique: cover-deco（如果需要的话，已在上面合并） ========== */
+</style>
+</head>
+<body>
+
+<!-- ===== VOLUME TAB BAR ===== -->
+<div class="volume-tabs" id="volumeTabs">
+    <button class="volume-tab active" data-volume="renwu" onclick="switchVolume('renwu')">人物卷</button>
+    <div class="volume-divider"></div>
+    <button class="volume-tab" data-volume="tongqu" onclick="switchVolume('tongqu')">童趣卷</button>
+</div>
+
+<!-- ===== 人物卷 ===== -->
+<div class="volume-container active" id="volume-renwu">
+<!-- COVER -->
+<section class="cover" id="cover">
+    <div class="cover-brush left">人</div>
+    <div class="cover-brush right">物</div>
+    <div class="cover-seal">画册</div>
+    <h1 class="cover-title">人物卷</h1>
+    <div class="cover-line"></div>
+    <p class="cover-subtitle">中国画人物作品集</p>
+    <p class="cover-info">共 69 幅作品 &nbsp;·&nbsp; 八大主题章节</p>
+    <div class="cover-scroll">↓ 向下浏览</div>
+</section>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+    <span class="nav-brand">人物卷</span>
+    <div class="nav-links" id="navLinks">
+        <a href="#toc">目录</a>
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="nav-modes">
+        <button onclick="setMode('grid')" id="btnGrid" class="active">画廊</button>
+        <button onclick="setMode('flip')" id="btnFlip">翻阅</button>
+    </div>
+    <button class="nav-toggle" onclick="toggleNav()">☰</button>
+</nav>
+
+<!-- TOC -->
+<section class="section" id="toc">
+    <div class="section-header">
+        <div class="section-num">CONTENTS</div>
+        <h2 class="section-title">画册目录</h2>
+        <p class="section-subtitle">八大主题，按章浏览</p>
+    </div>
+    <div class="toc">
+
+        <a class="toc-card" href="#shinv">
+            <div class="toc-card-title">仕女风华</div>
+            <div class="toc-card-sub">古典仕女，千姿百态</div>
+            <div class="toc-card-count">共 17 幅</div>
+        </a>
+        <a class="toc-card" href="#honglou">
+            <div class="toc-card-title">红楼遗梦</div>
+            <div class="toc-card-sub">大观园中，情深几许</div>
+            <div class="toc-card-count">共 5 幅</div>
+        </a>
+        <a class="toc-card" href="#shiyi">
+            <div class="toc-card-title">诗词意境</div>
+            <div class="toc-card-sub">诗中有画，画中有诗</div>
+            <div class="toc-card-count">共 6 幅</div>
+        </a>
+        <a class="toc-card" href="#wenren">
+            <div class="toc-card-title">文人风骨</div>
+            <div class="toc-card-sub">千古文人，风骨长存</div>
+            <div class="toc-card-count">共 9 幅</div>
+        </a>
+        <a class="toc-card" href="#xianfo">
+            <div class="toc-card-title">神话仙佛</div>
+            <div class="toc-card-sub">仙风道骨，慈悲庄严</div>
+            <div class="toc-card-count">共 7 幅</div>
+        </a>
+        <a class="toc-card" href="#shijing">
+            <div class="toc-card-title">市井百态</div>
+            <div class="toc-card-sub">人间烟火，众生万象</div>
+            <div class="toc-card-count">共 10 幅</div>
+        </a>
+        <a class="toc-card" href="#shidai">
+            <div class="toc-card-title">时代人物</div>
+            <div class="toc-card-sub">时代风貌，人物风流</div>
+            <div class="toc-card-count">共 9 幅</div>
+        </a>
+        <a class="toc-card" href="#xiaoxiang">
+            <div class="toc-card-title">人物肖像</div>
+            <div class="toc-card-sub">眉眼神态，栩栩如生</div>
+            <div class="toc-card-count">共 6 幅</div>
+        </a>
+    </div>
+</section>
+
+<div class="page-divider"></div>
+
+<!-- CHAPTER: 仕女风华 -->
+<section class="section" id="shinv">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 00</div>
+        <h2 class="section-title">仕女风华</h2>
+        <p class="section-subtitle">古典仕女，千姿百态</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv" class="active">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-shinv">
+        <div class="card" onclick="openLightbox('李清照-尺寸46x70cm.JPG', '李清照', '仕女风华', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/李清照-尺寸46x70cm.JPG" alt="李清照" loading="lazy">
+            </div>
+            <div class="card-label">李清照<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('李清照二-尺寸46x70cm.jpg', '李清照·二', '仕女风华', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/李清照二-尺寸46x70cm.jpg" alt="李清照·二" loading="lazy">
+            </div>
+            <div class="card-label">李清照·二<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('李清照三-尺寸46x70cm.jpg', '李清照·三', '仕女风华', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/李清照三-尺寸46x70cm.jpg" alt="李清照·三" loading="lazy">
+            </div>
+            <div class="card-label">李清照·三<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('西施图-尺寸138x70cm.jpg', '西施图', '仕女风华', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/西施图-尺寸138x70cm.jpg" alt="西施图" loading="lazy">
+            </div>
+            <div class="card-label">西施图<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('西施浣纱-尺寸138x70cm.jpg', '西施浣纱', '仕女风华', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/西施浣纱-尺寸138x70cm.jpg" alt="西施浣纱" loading="lazy">
+            </div>
+            <div class="card-label">西施浣纱<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('西施浣纱-尺寸70x138cm.jpg', '西施浣纱·竖幅', '仕女风华', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/西施浣纱-尺寸70x138cm.jpg" alt="西施浣纱·竖幅" loading="lazy">
+            </div>
+            <div class="card-label">西施浣纱·竖幅<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('二乔观书-尺寸70x138cm.jpg', '二乔观书', '仕女风华', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/二乔观书-尺寸70x138cm.jpg" alt="二乔观书" loading="lazy">
+            </div>
+            <div class="card-label">二乔观书<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('四美图-尺寸180x97cm.jpg', '四美图', '仕女风华', '180x97cm')">
+            <div class="card-img-wrap">
+                <img src="web/四美图-尺寸180x97cm.jpg" alt="四美图" loading="lazy">
+            </div>
+            <div class="card-label">四美图<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">180x97cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('反弹琵琶-70x100cm.jpg', '反弹琵琶', '仕女风华', '70x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/反弹琵琶-70x100cm.jpg" alt="反弹琵琶" loading="lazy">
+            </div>
+            <div class="card-label">反弹琵琶<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('牡丹仙子-尺寸138x70cm.JPG', '牡丹仙子', '仕女风华', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/牡丹仙子-尺寸138x70cm.JPG" alt="牡丹仙子" loading="lazy">
+            </div>
+            <div class="card-label">牡丹仙子<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('丛林仙子-70x138cm.JPG', '丛林仙子', '仕女风华', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/丛林仙子-70x138cm.JPG" alt="丛林仙子" loading="lazy">
+            </div>
+            <div class="card-label">丛林仙子<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('双娇-70x98cm.jpg', '双娇', '仕女风华', '70x98cm')">
+            <div class="card-img-wrap">
+                <img src="web/双娇-70x98cm.jpg" alt="双娇" loading="lazy">
+            </div>
+            <div class="card-label">双娇<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x98cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('桃花浴美人-70x98cm.jpg', '桃花浴美人', '仕女风华', '70x98cm')">
+            <div class="card-img-wrap">
+                <img src="web/桃花浴美人-70x98cm.jpg" alt="桃花浴美人" loading="lazy">
+            </div>
+            <div class="card-label">桃花浴美人<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x98cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('采药女-尺寸70x138cm.jpg', '采药女', '仕女风华', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/采药女-尺寸70x138cm.jpg" alt="采药女" loading="lazy">
+            </div>
+            <div class="card-label">采药女<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('回眸-尺寸46x70cm.jpg', '回眸', '仕女风华', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/回眸-尺寸46x70cm.jpg" alt="回眸" loading="lazy">
+            </div>
+            <div class="card-label">回眸<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('回眸-尺寸70x46cm.jpg', '回眸·横幅', '仕女风华', '70x46cm')">
+            <div class="card-img-wrap">
+                <img src="web/回眸-尺寸70x46cm.jpg" alt="回眸·横幅" loading="lazy">
+            </div>
+            <div class="card-label">回眸·横幅<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x46cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('回眸一笑百媚生-尺寸70x138cm.jpg', '回眸一笑百媚生', '仕女风华', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/回眸一笑百媚生-尺寸70x138cm.jpg" alt="回眸一笑百媚生" loading="lazy">
+            </div>
+            <div class="card-label">回眸一笑百媚生<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 红楼遗梦 -->
+<section class="section" id="honglou">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 01</div>
+        <h2 class="section-title">红楼遗梦</h2>
+        <p class="section-subtitle">大观园中，情深几许</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou" class="active">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-honglou">
+        <div class="card" onclick="openLightbox('林黛玉-尺寸70x100cm.jpg', '林黛玉', '红楼遗梦', '70x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/林黛玉-尺寸70x100cm.jpg" alt="林黛玉" loading="lazy">
+            </div>
+            <div class="card-label">林黛玉<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('黛玉葬花-尺寸138x70cm.jpg', '黛玉葬花', '红楼遗梦', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/黛玉葬花-尺寸138x70cm.jpg" alt="黛玉葬花" loading="lazy">
+            </div>
+            <div class="card-label">黛玉葬花<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('宝黛读西厢-70x98cm.jpg', '宝黛读西厢', '红楼遗梦', '70x98cm')">
+            <div class="card-img-wrap">
+                <img src="web/宝黛读西厢-70x98cm.jpg" alt="宝黛读西厢" loading="lazy">
+            </div>
+            <div class="card-label">宝黛读西厢<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x98cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('林黛玉书签-6x18cm.jpg', '林黛玉·书签', '红楼遗梦', '6x18cm')">
+            <div class="card-img-wrap">
+                <img src="web/林黛玉书签-6x18cm.jpg" alt="林黛玉·书签" loading="lazy">
+            </div>
+            <div class="card-label">林黛玉·书签<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">6x18cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('贾宝玉书签-6x18cm.jpg', '贾宝玉·书签', '红楼遗梦', '6x18cm')">
+            <div class="card-img-wrap">
+                <img src="web/贾宝玉书签-6x18cm.jpg" alt="贾宝玉·书签" loading="lazy">
+            </div>
+            <div class="card-label">贾宝玉·书签<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">6x18cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 诗词意境 -->
+<section class="section" id="shiyi">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 02</div>
+        <h2 class="section-title">诗词意境</h2>
+        <p class="section-subtitle">诗中有画，画中有诗</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi" class="active">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-shiyi">
+        <div class="card" onclick="openLightbox('李白诗意-35x100cm.jpg', '李白诗意', '诗词意境', '35x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/李白诗意-35x100cm.jpg" alt="李白诗意" loading="lazy">
+            </div>
+            <div class="card-label">李白诗意<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('李白诗意二-35x100cm.jpg', '李白诗意·二', '诗词意境', '35x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/李白诗意二-35x100cm.jpg" alt="李白诗意·二" loading="lazy">
+            </div>
+            <div class="card-label">李白诗意·二<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('李白诗意三-35x100cm.jpg', '李白诗意·三', '诗词意境', '35x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/李白诗意三-35x100cm.jpg" alt="李白诗意·三" loading="lazy">
+            </div>
+            <div class="card-label">李白诗意·三<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('陶渊明诗意-尺寸35x70cm.jpg', '陶渊明诗意', '诗词意境', '35x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/陶渊明诗意-尺寸35x70cm.jpg" alt="陶渊明诗意" loading="lazy">
+            </div>
+            <div class="card-label">陶渊明诗意<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('采菊东篱下-35x100cm.jpg', '采菊东篱下', '诗词意境', '35x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/采菊东篱下-35x100cm.jpg" alt="采菊东篱下" loading="lazy">
+            </div>
+            <div class="card-label">采菊东篱下<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('孤帆远影碧空尽-35x100cm.jpg', '孤帆远影碧空尽', '诗词意境', '35x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/孤帆远影碧空尽-35x100cm.jpg" alt="孤帆远影碧空尽" loading="lazy">
+            </div>
+            <div class="card-label">孤帆远影碧空尽<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x100cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 文人风骨 -->
+<section class="section" id="wenren">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 03</div>
+        <h2 class="section-title">文人风骨</h2>
+        <p class="section-subtitle">千古文人，风骨长存</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren" class="active">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-wenren">
+        <div class="card" onclick="openLightbox('太公垂钓图-70x70cm.jpg', '太公垂钓图', '文人风骨', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/太公垂钓图-70x70cm.jpg" alt="太公垂钓图" loading="lazy">
+            </div>
+            <div class="card-label">太公垂钓图<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('太公垂钓图二-70x70cm.jpg', '太公垂钓图·二', '文人风骨', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/太公垂钓图二-70x70cm.jpg" alt="太公垂钓图·二" loading="lazy">
+            </div>
+            <div class="card-label">太公垂钓图·二<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('愿者上钩-尺寸35x70cm.jpg', '愿者上钩', '文人风骨', '35x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/愿者上钩-尺寸35x70cm.jpg" alt="愿者上钩" loading="lazy">
+            </div>
+            <div class="card-label">愿者上钩<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('羲之爱鹅图-97x97cm.JPG', '羲之爱鹅图', '文人风骨', '97x97cm')">
+            <div class="card-img-wrap">
+                <img src="web/羲之爱鹅图-97x97cm.JPG" alt="羲之爱鹅图" loading="lazy">
+            </div>
+            <div class="card-label">羲之爱鹅图<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">97x97cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('羲之爱鹅图-尺寸138x70cm.JPG', '羲之爱鹅图·横幅', '文人风骨', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/羲之爱鹅图-尺寸138x70cm.JPG" alt="羲之爱鹅图·横幅" loading="lazy">
+            </div>
+            <div class="card-label">羲之爱鹅图·横幅<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('竹林七贤-尺寸138x70cm.jpg', '竹林七贤', '文人风骨', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/竹林七贤-尺寸138x70cm.jpg" alt="竹林七贤" loading="lazy">
+            </div>
+            <div class="card-label">竹林七贤<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('竹林七贤二-尺寸138x70cm.jpg', '竹林七贤·二', '文人风骨', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/竹林七贤二-尺寸138x70cm.jpg" alt="竹林七贤·二" loading="lazy">
+            </div>
+            <div class="card-label">竹林七贤·二<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('饮中八仙-尺寸138x60cm.JPG', '饮中八仙', '文人风骨', '138x60cm')">
+            <div class="card-img-wrap">
+                <img src="web/饮中八仙-尺寸138x60cm.JPG" alt="饮中八仙" loading="lazy">
+            </div>
+            <div class="card-label">饮中八仙<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x60cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('观沧海-尺寸138x70cm.JPG', '观沧海', '文人风骨', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/观沧海-尺寸138x70cm.JPG" alt="观沧海" loading="lazy">
+            </div>
+            <div class="card-label">观沧海<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 神话仙佛 -->
+<section class="section" id="xianfo">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 04</div>
+        <h2 class="section-title">神话仙佛</h2>
+        <p class="section-subtitle">仙风道骨，慈悲庄严</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo" class="active">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-xianfo">
+        <div class="card" onclick="openLightbox('观音-尺寸46x70cm.jpg', '观音', '神话仙佛', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/观音-尺寸46x70cm.jpg" alt="观音" loading="lazy">
+            </div>
+            <div class="card-label">观音<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('观音菩萨-尺寸46x70cm.JPG', '观音菩萨', '神话仙佛', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/观音菩萨-尺寸46x70cm.JPG" alt="观音菩萨" loading="lazy">
+            </div>
+            <div class="card-label">观音菩萨<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('普贤菩萨-尺寸46x70cm.JPG', '普贤菩萨', '神话仙佛', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/普贤菩萨-尺寸46x70cm.JPG" alt="普贤菩萨" loading="lazy">
+            </div>
+            <div class="card-label">普贤菩萨<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('善财童子-尺寸70x138cm.JPG', '善财童子', '神话仙佛', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/善财童子-尺寸70x138cm.JPG" alt="善财童子" loading="lazy">
+            </div>
+            <div class="card-label">善财童子<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('八仙过海-尺寸180x97cm.jpg', '八仙过海', '神话仙佛', '180x97cm')">
+            <div class="card-img-wrap">
+                <img src="web/八仙过海-尺寸180x97cm.jpg" alt="八仙过海" loading="lazy">
+            </div>
+            <div class="card-label">八仙过海<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">180x97cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('伏虎图-70x70cm.jpg', '伏虎图', '神话仙佛', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/伏虎图-70x70cm.jpg" alt="伏虎图" loading="lazy">
+            </div>
+            <div class="card-label">伏虎图<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('武财神赵公明-尺寸70x138cm.JPG', '武财神赵公明', '神话仙佛', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/武财神赵公明-尺寸70x138cm.JPG" alt="武财神赵公明" loading="lazy">
+            </div>
+            <div class="card-label">武财神赵公明<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 市井百态 -->
+<section class="section" id="shijing">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 05</div>
+        <h2 class="section-title">市井百态</h2>
+        <p class="section-subtitle">人间烟火，众生万象</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing" class="active">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-shijing">
+        <div class="card" onclick="openLightbox('惠安女-50x60cm.JPG', '惠安女', '市井百态', '50x60cm')">
+            <div class="card-img-wrap">
+                <img src="web/惠安女-50x60cm.JPG" alt="惠安女" loading="lazy">
+            </div>
+            <div class="card-label">惠安女<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">50x60cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('惠安女-尺寸70x70cm.jpg', '惠安女·二', '市井百态', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/惠安女-尺寸70x70cm.jpg" alt="惠安女·二" loading="lazy">
+            </div>
+            <div class="card-label">惠安女·二<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('赶集-尺寸70x46cm.jpg', '赶集', '市井百态', '70x46cm')">
+            <div class="card-img-wrap">
+                <img src="web/赶集-尺寸70x46cm.jpg" alt="赶集" loading="lazy">
+            </div>
+            <div class="card-label">赶集<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x46cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('春耕-尺寸70x46cm.jpg', '春耕', '市井百态', '70x46cm')">
+            <div class="card-img-wrap">
+                <img src="web/春耕-尺寸70x46cm.jpg" alt="春耕" loading="lazy">
+            </div>
+            <div class="card-label">春耕<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x46cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('年年有鱼-70x70cm.jpg', '年年有鱼', '市井百态', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/年年有鱼-70x70cm.jpg" alt="年年有鱼" loading="lazy">
+            </div>
+            <div class="card-label">年年有鱼<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('寒江独钓-尺寸70x138cm.jpg', '寒江独钓', '市井百态', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/寒江独钓-尺寸70x138cm.jpg" alt="寒江独钓" loading="lazy">
+            </div>
+            <div class="card-label">寒江独钓<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('陪伴-尺寸70x46cm.jpg', '陪伴', '市井百态', '70x46cm')">
+            <div class="card-img-wrap">
+                <img src="web/陪伴-尺寸70x46cm.jpg" alt="陪伴" loading="lazy">
+            </div>
+            <div class="card-label">陪伴<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x46cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('泉-尺寸50x70cm.jpg', '泉', '市井百态', '50x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/泉-尺寸50x70cm.jpg" alt="泉" loading="lazy">
+            </div>
+            <div class="card-label">泉<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">50x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('霸王别姬-尺寸70x138cm.jpg', '霸王别姬', '市井百态', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/霸王别姬-尺寸70x138cm.jpg" alt="霸王别姬" loading="lazy">
+            </div>
+            <div class="card-label">霸王别姬<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('中国梦-尺寸70x138cm.JPG', '中国梦', '市井百态', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/中国梦-尺寸70x138cm.JPG" alt="中国梦" loading="lazy">
+            </div>
+            <div class="card-label">中国梦<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 时代人物 -->
+<section class="section" id="shidai">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 06</div>
+        <h2 class="section-title">时代人物</h2>
+        <p class="section-subtitle">时代风貌，人物风流</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai" class="active">时代人物</a>
+        <a href="#xiaoxiang">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-shidai">
+        <div class="card" onclick="openLightbox('都市白领-尺寸46x70cm.jpg', '都市白领', '时代人物', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/都市白领-尺寸46x70cm.jpg" alt="都市白领" loading="lazy">
+            </div>
+            <div class="card-label">都市白领<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('白衣天使-70x70cm.jpeg', '白衣天使', '时代人物', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/白衣天使-70x70cm.jpeg" alt="白衣天使" loading="lazy">
+            </div>
+            <div class="card-label">白衣天使<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('读书少女-尺寸70x46cm.jpg', '读书少女', '时代人物', '70x46cm')">
+            <div class="card-img-wrap">
+                <img src="web/读书少女-尺寸70x46cm.jpg" alt="读书少女" loading="lazy">
+            </div>
+            <div class="card-label">读书少女<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x46cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('足球宝贝-尺寸70x100cm.jpg', '足球宝贝', '时代人物', '70x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/足球宝贝-尺寸70x100cm.jpg" alt="足球宝贝" loading="lazy">
+            </div>
+            <div class="card-label">足球宝贝<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('足球宝贝-70x138cm.jpg', '足球宝贝·竖幅', '时代人物', '70x138cm')">
+            <div class="card-img-wrap">
+                <img src="web/足球宝贝-70x138cm.jpg" alt="足球宝贝·竖幅" loading="lazy">
+            </div>
+            <div class="card-label">足球宝贝·竖幅<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x138cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('父子情深-197x100cm.jpg', '父子情深', '时代人物', '197x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/父子情深-197x100cm.jpg" alt="父子情深" loading="lazy">
+            </div>
+            <div class="card-label">父子情深<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">197x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('父子情深-50x100cm.jpg', '父子情深·小品', '时代人物', '50x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/父子情深-50x100cm.jpg" alt="父子情深·小品" loading="lazy">
+            </div>
+            <div class="card-label">父子情深·小品<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">50x100cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('父子情深-尺寸138x70cm.jpg', '父子情深·横幅', '时代人物', '138x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/父子情深-尺寸138x70cm.jpg" alt="父子情深·横幅" loading="lazy">
+            </div>
+            <div class="card-label">父子情深·横幅<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">138x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('画坛三巨匠-197x100cm.jpg', '画坛三巨匠', '时代人物', '197x100cm')">
+            <div class="card-img-wrap">
+                <img src="web/画坛三巨匠-197x100cm.jpg" alt="画坛三巨匠" loading="lazy">
+            </div>
+            <div class="card-label">画坛三巨匠<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">197x100cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+
+<!-- CHAPTER: 人物肖像 -->
+<section class="section" id="xiaoxiang">
+    <div class="section-header">
+        <div class="section-num">CHAPTER 07</div>
+        <h2 class="section-title">人物肖像</h2>
+        <p class="section-subtitle">眉眼神态，栩栩如生</p>
+    </div>
+    <div class="chapter-nav">
+        <a href="#shinv">仕女风华</a>
+        <a href="#honglou">红楼遗梦</a>
+        <a href="#shiyi">诗词意境</a>
+        <a href="#wenren">文人风骨</a>
+        <a href="#xianfo">神话仙佛</a>
+        <a href="#shijing">市井百态</a>
+        <a href="#shidai">时代人物</a>
+        <a href="#xiaoxiang" class="active">人物肖像</a>
+    </div>
+    <div class="grid" id="grid-xiaoxiang">
+        <div class="card" onclick="openLightbox('清眸-尺寸35x35cm.jpg', '清眸', '人物肖像', '35x35cm')">
+            <div class="card-img-wrap">
+                <img src="web/清眸-尺寸35x35cm.jpg" alt="清眸" loading="lazy">
+            </div>
+            <div class="card-label">清眸<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">35x35cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('思-70x70cm.JPG', '思', '人物肖像', '70x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/思-70x70cm.JPG" alt="思" loading="lazy">
+            </div>
+            <div class="card-label">思<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">70x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('桃莉女士画像-尺寸46x70cm.jpg', '桃莉女士画像', '人物肖像', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/桃莉女士画像-尺寸46x70cm.jpg" alt="桃莉女士画像" loading="lazy">
+            </div>
+            <div class="card-label">桃莉女士画像<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('春莲女士画像-尺寸46x70cm.jpg', '春莲女士画像', '人物肖像', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/春莲女士画像-尺寸46x70cm.jpg" alt="春莲女士画像" loading="lazy">
+            </div>
+            <div class="card-label">春莲女士画像<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('裸女-尺寸46x70cm.jpg', '裸女', '人物肖像', '46x70cm')">
+            <div class="card-img-wrap">
+                <img src="web/裸女-尺寸46x70cm.jpg" alt="裸女" loading="lazy">
+            </div>
+            <div class="card-label">裸女<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">46x70cm</div></div>
+        </div>
+        <div class="card" onclick="openLightbox('少女与小猫-50x50cm.jpg', '少女与小猫', '人物肖像', '50x50cm')">
+            <div class="card-img-wrap">
+                <img src="web/少女与小猫-50x50cm.jpg" alt="少女与小猫" loading="lazy">
+            </div>
+            <div class="card-label">少女与小猫<div style="font-size:0.75rem;color:rgba(255,255,255,0.65);letter-spacing:0.08em;margin-top:2px;">50x50cm</div></div>
+        </div>
+    </div>
+</section>
+<div class='page-divider'></div>
+</div>
+
+<!-- ===== 童趣卷 ===== -->
+<div class="volume-container" id="volume-tongqu">
+<!-- COVER -->
+<section class="cover" id="cover">
+    <div class="cover-deco l">童</div>
+    <div class="cover-deco r">趣</div>
+    <div class="cover-seal">童趣</div>
+    <h1 class="cover-title">童趣卷</h1>
+    <div class="cover-line"></div>
+    <p class="cover-subtitle">中国画童趣作品集</p>
+    <p class="cover-info">共 94 幅作品 &nbsp;·&nbsp; 六大主题章节</p>
+    <div class="cover-scroll">↓ 向下浏览</div>
+</section>
+
+<!-- NAV -->
+<nav class="nav" id="nav-tongqu">
+    <span class="nav-brand">童趣卷</span>
+    <div class="nav-links">
+        <a href="#shanmian">扇面雅韵</a>
+        <a href="#touxiang">人物头像</a>
+        <a href="#siji">四季童趣</a>
+        <a href="#tongzhen">童真世界</a>
+        <a href="#jingxuan">作品精选</a>
+        <a href="#qita">其他作品</a>
+
+    </div>
+    <div class="nav-modes">
+        <button onclick="setMode('grid')" id="btnGrid-tongqu" class="active">画廊</button>
+        <button onclick="setMode('flip')" id="btnFlip-tongqu">翻阅</button>
+    </div>
+</nav>
+
+<!-- TOC -->
+
+    <section class="section" id="toc">
+        <div class="section-header">
+            <div class="section-num">CONTENTS</div>
+            <h2 class="section-title">画册目录</h2>
+            <p class="section-subtitle">六大主题，按章浏览</p>
+        </div>
+        <div class="toc">
+    
+            <a class="toc-card" href="#shanmian">
+                <div class="toc-card-title">扇面雅韵</div>
+                <div class="toc-card-sub">扇面小品，雅致精巧</div>
+                <div class="toc-card-count">共 9 幅</div>
+            </a>
+        
+            <a class="toc-card" href="#touxiang">
+                <div class="toc-card-title">人物头像</div>
+                <div class="toc-card-sub">眉眼传神，各具风采</div>
+                <div class="toc-card-count">共 8 幅</div>
+            </a>
+        
+            <a class="toc-card" href="#siji">
+                <div class="toc-card-title">四季童趣</div>
+                <div class="toc-card-sub">春夏秋冬，童心盎然</div>
+                <div class="toc-card-count">共 4 幅</div>
+            </a>
+        
+            <a class="toc-card" href="#tongzhen">
+                <div class="toc-card-title">童真世界</div>
+                <div class="toc-card-sub">稚趣天真，烂漫动人</div>
+                <div class="toc-card-count">共 3 幅</div>
+            </a>
+        
+            <a class="toc-card" href="#jingxuan">
+                <div class="toc-card-title">作品精选</div>
+                <div class="toc-card-sub">童趣图作品选</div>
+                <div class="toc-card-count">共 8 幅</div>
+            </a>
+        
+            <a class="toc-card" href="#qita">
+                <div class="toc-card-title">其他作品</div>
+                <div class="toc-card-sub">其他童趣作品</div>
+                <div class="toc-card-count">共 62 幅</div>
+            </a>
+        
+        </div>
+    </section>
+    <div class="page-divider"></div>
+    
+
+<!-- CHAPTERS -->
+
+        <section class="section" id="shanmian">
+            <div class="section-header">
+                <div class="section-num">SHANMIAN</div>
+                <h2 class="section-title">扇面雅韵</h2>
+                <p class="section-subtitle">扇面小品，雅致精巧</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('艺术品_扇面_001.jpg', '艺术品 扇面 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_001.jpg" alt="艺术品 扇面 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_15_001.jpg', '艺术品 扇面 15 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_15_001.jpg" alt="艺术品 扇面 15 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 15 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_8_001.jpg', '艺术品 扇面 8 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_8_001.jpg" alt="艺术品 扇面 8 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 8 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_13_001.jpg', '艺术品 扇面 13 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_13_001.jpg" alt="艺术品 扇面 13 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 13 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_1_001.jpg', '艺术品 扇面 1 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_1_001.jpg" alt="艺术品 扇面 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_5_001.jpg', '艺术品 扇面 5 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_5_001.jpg" alt="艺术品 扇面 5 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 5 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_18_001.jpg', '艺术品 扇面 18 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_18_001.jpg" alt="艺术品 扇面 18 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 18 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_v1_001.jpg', '艺术品 扇面 V1 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_v1_001.jpg" alt="艺术品 扇面 V1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 V1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('艺术品_扇面_46_001.jpg', '艺术品 扇面 46 001', '扇面雅韵', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/艺术品_扇面_46_001.jpg" alt="艺术品 扇面 46 001" loading="lazy">
+                    </div>
+                    <div class="card-label">艺术品 扇面 46 001</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+        <section class="section" id="touxiang">
+            <div class="section-header">
+                <div class="section-num">TOUXIANG</div>
+                <h2 class="section-title">人物头像</h2>
+                <p class="section-subtitle">眉眼传神，各具风采</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('人物_头像_1_001.jpg', '人物 头像 1 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_001.jpg" alt="人物 头像 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v1_001.jpg', '人物 头像 1 V1 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v1_001.jpg" alt="人物 头像 1 V1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v2_001.jpg', '人物 头像 1 V2 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v2_001.jpg" alt="人物 头像 1 V2 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V2 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v3_001.jpg', '人物 头像 1 V3 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v3_001.jpg" alt="人物 头像 1 V3 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V3 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v4_001.jpg', '人物 头像 1 V4 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v4_001.jpg" alt="人物 头像 1 V4 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V4 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v5_001.jpg', '人物 头像 1 V5 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v5_001.jpg" alt="人物 头像 1 V5 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V5 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v6_001.jpg', '人物 头像 1 V6 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v6_001.jpg" alt="人物 头像 1 V6 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V6 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_头像_1_v7_001.jpg', '人物 头像 1 V7 001', '人物头像', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_头像_1_v7_001.jpg" alt="人物 头像 1 V7 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 头像 1 V7 001</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+        <section class="section" id="siji">
+            <div class="section-header">
+                <div class="section-num">SIJI</div>
+                <h2 class="section-title">四季童趣</h2>
+                <p class="section-subtitle">春夏秋冬，童心盎然</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('季节_夏_001.jpg', '季节 夏 001', '四季童趣', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/季节_夏_001.jpg" alt="季节 夏 001" loading="lazy">
+                    </div>
+                    <div class="card-label">季节 夏 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('季节_秋_001.jpg', '季节 秋 001', '四季童趣', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/季节_秋_001.jpg" alt="季节 秋 001" loading="lazy">
+                    </div>
+                    <div class="card-label">季节 秋 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('季节_春_001.jpg', '季节 春 001', '四季童趣', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/季节_春_001.jpg" alt="季节 春 001" loading="lazy">
+                    </div>
+                    <div class="card-label">季节 春 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('季节_冬_001.jpg', '季节 冬 001', '四季童趣', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/季节_冬_001.jpg" alt="季节 冬 001" loading="lazy">
+                    </div>
+                    <div class="card-label">季节 冬 001</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+        <section class="section" id="tongzhen">
+            <div class="section-header">
+                <div class="section-num">TONGZHEN</div>
+                <h2 class="section-title">童真世界</h2>
+                <p class="section-subtitle">稚趣天真，烂漫动人</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('人物_小女孩_1_001.jpg', '人物 小女孩 1 001', '童真世界', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_小女孩_1_001.jpg" alt="人物 小女孩 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 小女孩 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_鸣凤_1_001.jpg', '人物 鸣凤 1 001', '童真世界', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_鸣凤_1_001.jpg" alt="人物 鸣凤 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 鸣凤 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_小女孩_4_001.jpg', '人物 小女孩 4 001', '童真世界', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_小女孩_4_001.jpg" alt="人物 小女孩 4 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 小女孩 4 001</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+        <section class="section" id="jingxuan">
+            <div class="section-header">
+                <div class="section-num">JINGXUAN</div>
+                <h2 class="section-title">作品精选</h2>
+                <p class="section-subtitle">童趣图作品选</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('宗教_佛像_001.jpg', '宗教 佛像 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/宗教_佛像_001.jpg" alt="宗教 佛像 001" loading="lazy">
+                    </div>
+                    <div class="card-label">宗教 佛像 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('寓意_和平鸽_001.jpg', '寓意 和平鸽 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/寓意_和平鸽_001.jpg" alt="寓意 和平鸽 001" loading="lazy">
+                    </div>
+                    <div class="card-label">寓意 和平鸽 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('人物_明星_杨幂_1_001.jpg', '人物 明星 杨幂 1 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/人物_明星_杨幂_1_001.jpg" alt="人物 明星 杨幂 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">人物 明星 杨幂 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('故事_孺子牛_1_001.jpg', '故事 孺子牛 1 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/故事_孺子牛_1_001.jpg" alt="故事 孺子牛 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">故事 孺子牛 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('场景_荷塘采莲_1_001.jpg', '场景 荷塘采莲 1 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/场景_荷塘采莲_1_001.jpg" alt="场景 荷塘采莲 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">场景 荷塘采莲 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('故事_孺子牛_2_001.jpg', '故事 孺子牛 2 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/故事_孺子牛_2_001.jpg" alt="故事 孺子牛 2 001" loading="lazy">
+                    </div>
+                    <div class="card-label">故事 孺子牛 2 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('场景_渔趣_1_001.jpg', '场景 渔趣 1 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/场景_渔趣_1_001.jpg" alt="场景 渔趣 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">场景 渔趣 1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('故事_为官图_1_001.jpg', '故事 为官图 1 001', '作品精选', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/故事_为官图_1_001.jpg" alt="故事 为官图 1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">故事 为官图 1 001</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+        <section class="section" id="qita">
+            <div class="section-header">
+                <div class="section-num">QITA</div>
+                <h2 class="section-title">其他作品</h2>
+                <p class="section-subtitle">其他童趣作品</p>
+            </div>
+            <div class="grid">
+        
+                <div class="card" onclick="openLightbox('童趣_编号_002.jpg', '童趣 编号 002', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_002.jpg" alt="童趣 编号 002" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 002</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_003.jpg', '童趣 编号 003', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_003.jpg" alt="童趣 编号 003" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 003</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_005_副本_001.jpg', '童趣 005 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_005_副本_001.jpg" alt="童趣 005 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 005 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_00001_2_副本_001.jpg', '童趣 00001 2 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_00001_2_副本_001.jpg" alt="童趣 00001 2 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 00001 2 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1453.jpg', '童趣 相机拍摄 1453', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1453.jpg" alt="童趣 相机拍摄 1453" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1453</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0770.jpg', '童趣 相机拍摄 0770', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0770.jpg" alt="童趣 相机拍摄 0770" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0770</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0758.jpg', '童趣 相机拍摄 0758', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0758.jpg" alt="童趣 相机拍摄 0758" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0758</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0001.jpg', '童趣 编号 0001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0001.jpg" alt="童趣 编号 0001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0774.jpg', '童趣 相机拍摄 0774', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0774.jpg" alt="童趣 相机拍摄 0774" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0774</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_004.jpg', '童趣 编号 004', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_004.jpg" alt="童趣 编号 004" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 004</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_005.jpg', '童趣 编号 005', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_005.jpg" alt="童趣 编号 005" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 005</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0749.jpg', '童趣 相机拍摄 0749', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0749.jpg" alt="童趣 相机拍摄 0749" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0749</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0761.jpg', '童趣 相机拍摄 0761', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0761.jpg" alt="童趣 相机拍摄 0761" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0761</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1696.jpg', '童趣 相机拍摄 1696', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1696.jpg" alt="童趣 相机拍摄 1696" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1696</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0001的_副本_001.jpg', '童趣 0001的 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0001的_副本_001.jpg" alt="童趣 0001的 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0001的 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_007.jpg', '童趣 编号 007', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_007.jpg" alt="童趣 编号 007" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 007</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_006.jpg', '童趣 编号 006', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_006.jpg" alt="童趣 编号 006" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 006</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_007_副本_001.jpg', '童趣 007 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_007_副本_001.jpg" alt="童趣 007 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 007 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0006.jpg', '童趣 编号 0006', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0006.jpg" alt="童趣 编号 0006" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0006</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0006_副本_001.jpg', '童趣 0006 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0006_副本_001.jpg" alt="童趣 0006 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0006 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0658.jpg', '童趣 相机拍摄 0658', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0658.jpg" alt="童趣 相机拍摄 0658" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0658</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0005.jpg', '童趣 编号 0005', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0005.jpg" alt="童趣 编号 0005" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0005</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0011.jpg', '童趣 编号 0011', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0011.jpg" alt="童趣 编号 0011" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0011</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_003_副本_001.jpg', '童趣 003 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_003_副本_001.jpg" alt="童趣 003 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 003 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0707.jpg', '童趣 相机拍摄 0707', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0707.jpg" alt="童趣 相机拍摄 0707" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0707</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_001_002.jpg', '童趣 001 002', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_001_002.jpg" alt="童趣 001 002" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 001 002</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0004.jpg', '童趣 编号 0004', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0004.jpg" alt="童趣 编号 0004" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0004</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0663.jpg', '童趣 相机拍摄 0663', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0663.jpg" alt="童趣 相机拍摄 0663" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0663</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0703.jpg', '童趣 相机拍摄 0703', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0703.jpg" alt="童趣 相机拍摄 0703" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0703</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_v1_0001.jpg', '童趣 编号 V1 0001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_v1_0001.jpg" alt="童趣 编号 V1 0001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 V1 0001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0674.jpg', '童趣 相机拍摄 0674', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0674.jpg" alt="童趣 相机拍摄 0674" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0674</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0003.jpg', '童趣 编号 0003', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0003.jpg" alt="童趣 编号 0003" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0003</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0004_副本_001.jpg', '童趣 0004 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0004_副本_001.jpg" alt="童趣 0004 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0004 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_11110.jpg', '童趣 编号 11110', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_11110.jpg" alt="童趣 编号 11110" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 11110</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0715.jpg', '童趣 相机拍摄 0715', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0715.jpg" alt="童趣 相机拍摄 0715" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0715</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_0002.jpg', '童趣 编号 0002', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_0002.jpg" alt="童趣 编号 0002" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 0002</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0001_副本_001.jpg', '童趣 0001 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0001_副本_001.jpg" alt="童趣 0001 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0001 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0718.jpg', '童趣 相机拍摄 0718', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0718.jpg" alt="童趣 相机拍摄 0718" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0718</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0731.jpg', '童趣 相机拍摄 0731', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0731.jpg" alt="童趣 相机拍摄 0731" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0731</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_004_副本_001.jpg', '童趣 004 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_004_副本_001.jpg" alt="童趣 004 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 004 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_1110.jpg', '童趣 编号 1110', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_1110.jpg" alt="童趣 编号 1110" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 1110</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0726.jpg', '童趣 相机拍摄 0726', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0726.jpg" alt="童趣 相机拍摄 0726" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0726</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0001的_副本_v1_001.jpg', '童趣 0001的 副本 V1 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0001的_副本_v1_001.jpg" alt="童趣 0001的 副本 V1 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0001的 副本 V1 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0691.jpg', '童趣 相机拍摄 0691', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0691.jpg" alt="童趣 相机拍摄 0691" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0691</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_001.jpg', '童趣 编号 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_001.jpg" alt="童趣 编号 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0737.jpg', '童趣 相机拍摄 0737', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0737.jpg" alt="童趣 相机拍摄 0737" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0737</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0723.jpg', '童趣 相机拍摄 0723', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0723.jpg" alt="童趣 相机拍摄 0723" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0723</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_0011_副本_001.jpg', '童趣 0011 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_0011_副本_001.jpg" alt="童趣 0011 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 0011 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_00001_副本_001.jpg', '童趣 00001 副本 001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_00001_副本_001.jpg" alt="童趣 00001 副本 001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 00001 副本 001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0721.jpg', '童趣 相机拍摄 0721', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0721.jpg" alt="童趣 相机拍摄 0721" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0721</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_编号_00001.jpg', '童趣 编号 00001', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_编号_00001.jpg" alt="童趣 编号 00001" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 编号 00001</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0697.jpg', '童趣 相机拍摄 0697', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0697.jpg" alt="童趣 相机拍摄 0697" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0697</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1459.jpg', '童趣 相机拍摄 1459', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1459.jpg" alt="童趣 相机拍摄 1459" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1459</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1470.jpg', '童趣 相机拍摄 1470', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1470.jpg" alt="童趣 相机拍摄 1470" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1470</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0744.jpg', '童趣 相机拍摄 0744', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0744.jpg" alt="童趣 相机拍摄 0744" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0744</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0779.jpg', '童趣 相机拍摄 0779', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0779.jpg" alt="童趣 相机拍摄 0779" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0779</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1701.jpg', '童趣 相机拍摄 1701', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1701.jpg" alt="童趣 相机拍摄 1701" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1701</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0741.jpg', '童趣 相机拍摄 0741', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0741.jpg" alt="童趣 相机拍摄 0741" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0741</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_1463.jpg', '童趣 相机拍摄 1463', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_1463.jpg" alt="童趣 相机拍摄 1463" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 1463</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_00001_002.jpg', '童趣 00001 002', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_00001_002.jpg" alt="童趣 00001 002" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 00001 002</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0754.jpg', '童趣 相机拍摄 0754', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0754.jpg" alt="童趣 相机拍摄 0754" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0754</div>
+                </div>
+            
+                <div class="card" onclick="openLightbox('童趣_相机拍摄_0636.jpg', '童趣 相机拍摄 0636', '其他作品', '')">
+                    <div class="card-img-wrap">
+                        <img src="web_tongqu/童趣_相机拍摄_0636.jpg" alt="童趣 相机拍摄 0636" loading="lazy">
+                    </div>
+                    <div class="card-label">童趣 相机拍摄 0636</div>
+                </div>
+            
+            </div>
+        </section>
+        <div class="page-divider"></div>
+        
+
+</div>
+
+<!-- ===== LIGHTBOX (shared) ===== -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-prev" onclick="lbNav(-1)">‹</button>
+    <button class="lightbox-next" onclick="lbNav(1)">›</button>
+    <img class="lightbox-img" id="lbImg" src="" alt="">
+    <div class="lightbox-caption" id="lbCaption"></div>
+    <div class="lightbox-counter" id="lbCounter"></div>
+</div>
+
+<!-- ===== FLIP MODE (shared) ===== -->
+<div class="flip-mode" id="flipMode">
+    <div class="flip-topbar">
+        <span style="font-weight:700;letter-spacing:0.1em;" id="flipTopLabel">全幅浏览</span>
+        <div class="nav-modes">
+            <button onclick="setMode('grid')" id="btnGrid2">画廊</button>
+            <button onclick="setMode('flip')" id="btnFlip2" class="active">翻阅</button>
+        </div>
+        <button class="flip-close" onclick="closeFlip()">&times;</button>
+    </div>
+    <div class="flip-viewport">
+        <button class="flip-arrow left" onclick="flipNav(-1)">‹</button>
+        <img class="flip-page" id="flipImg" src="" alt="">
+        <button class="flip-arrow right" onclick="flipNav(1)">›</button>
+    </div>
+    <div class="flip-info">
+        <div id="flipTitle"></div>
+        <div id="flipSize" style="font-size:0.75rem;color:#8b7355;margin-top:2px;"></div>
+        <div id="flipChapter" style="font-size:0.8rem;color:#8b7355;margin-top:4px;"></div>
+        <div class="flip-progress">
+            <div class="flip-progress-bar" id="flipProgress"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== BACK TO TOP (shared) ===== -->
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ===== FOOTER (shared) ===== -->
+<footer class="footer">
+    <p>电子画册 — 人物卷 &amp; 童趣卷</p>
+    <p style="margin-top:8px;font-size:0.75rem;color:#b5a88a;">水墨丹青 · 人物风流 · 童心未泯</p>
+</footer>
+
+<script>
+// ========== DATA ==========
+const FLIP_DATA_RENWU = [
+{"file": "李清照-尺寸46x70cm.JPG", "title": "李清照", "chapter": "仕女风华", "size": "46x70cm"},
+        {"file": "李清照二-尺寸46x70cm.jpg", "title": "李清照·二", "chapter": "仕女风华", "size": "46x70cm"},
+        {"file": "李清照三-尺寸46x70cm.jpg", "title": "李清照·三", "chapter": "仕女风华", "size": "46x70cm"},
+        {"file": "西施图-尺寸138x70cm.jpg", "title": "西施图", "chapter": "仕女风华", "size": "138x70cm"},
+        {"file": "西施浣纱-尺寸138x70cm.jpg", "title": "西施浣纱", "chapter": "仕女风华", "size": "138x70cm"},
+        {"file": "西施浣纱-尺寸70x138cm.jpg", "title": "西施浣纱·竖幅", "chapter": "仕女风华", "size": "70x138cm"},
+        {"file": "二乔观书-尺寸70x138cm.jpg", "title": "二乔观书", "chapter": "仕女风华", "size": "70x138cm"},
+        {"file": "四美图-尺寸180x97cm.jpg", "title": "四美图", "chapter": "仕女风华", "size": "180x97cm"},
+        {"file": "反弹琵琶-70x100cm.jpg", "title": "反弹琵琶", "chapter": "仕女风华", "size": "70x100cm"},
+        {"file": "牡丹仙子-尺寸138x70cm.JPG", "title": "牡丹仙子", "chapter": "仕女风华", "size": "138x70cm"},
+        {"file": "丛林仙子-70x138cm.JPG", "title": "丛林仙子", "chapter": "仕女风华", "size": "70x138cm"},
+        {"file": "双娇-70x98cm.jpg", "title": "双娇", "chapter": "仕女风华", "size": "70x98cm"},
+        {"file": "桃花浴美人-70x98cm.jpg", "title": "桃花浴美人", "chapter": "仕女风华", "size": "70x98cm"},
+        {"file": "采药女-尺寸70x138cm.jpg", "title": "采药女", "chapter": "仕女风华", "size": "70x138cm"},
+        {"file": "回眸-尺寸46x70cm.jpg", "title": "回眸", "chapter": "仕女风华", "size": "46x70cm"},
+        {"file": "回眸-尺寸70x46cm.jpg", "title": "回眸·横幅", "chapter": "仕女风华", "size": "70x46cm"},
+        {"file": "回眸一笑百媚生-尺寸70x138cm.jpg", "title": "回眸一笑百媚生", "chapter": "仕女风华", "size": "70x138cm"},
+        {"file": "林黛玉-尺寸70x100cm.jpg", "title": "林黛玉", "chapter": "红楼遗梦", "size": "70x100cm"},
+        {"file": "黛玉葬花-尺寸138x70cm.jpg", "title": "黛玉葬花", "chapter": "红楼遗梦", "size": "138x70cm"},
+        {"file": "宝黛读西厢-70x98cm.jpg", "title": "宝黛读西厢", "chapter": "红楼遗梦", "size": "70x98cm"},
+        {"file": "林黛玉书签-6x18cm.jpg", "title": "林黛玉·书签", "chapter": "红楼遗梦", "size": "6x18cm"},
+        {"file": "贾宝玉书签-6x18cm.jpg", "title": "贾宝玉·书签", "chapter": "红楼遗梦", "size": "6x18cm"},
+        {"file": "李白诗意-35x100cm.jpg", "title": "李白诗意", "chapter": "诗词意境", "size": "35x100cm"},
+        {"file": "李白诗意二-35x100cm.jpg", "title": "李白诗意·二", "chapter": "诗词意境", "size": "35x100cm"},
+        {"file": "李白诗意三-35x100cm.jpg", "title": "李白诗意·三", "chapter": "诗词意境", "size": "35x100cm"},
+        {"file": "陶渊明诗意-尺寸35x70cm.jpg", "title": "陶渊明诗意", "chapter": "诗词意境", "size": "35x70cm"},
+        {"file": "采菊东篱下-35x100cm.jpg", "title": "采菊东篱下", "chapter": "诗词意境", "size": "35x100cm"},
+        {"file": "孤帆远影碧空尽-35x100cm.jpg", "title": "孤帆远影碧空尽", "chapter": "诗词意境", "size": "35x100cm"},
+        {"file": "太公垂钓图-70x70cm.jpg", "title": "太公垂钓图", "chapter": "文人风骨", "size": "70x70cm"},
+        {"file": "太公垂钓图二-70x70cm.jpg", "title": "太公垂钓图·二", "chapter": "文人风骨", "size": "70x70cm"},
+        {"file": "愿者上钩-尺寸35x70cm.jpg", "title": "愿者上钩", "chapter": "文人风骨", "size": "35x70cm"},
+        {"file": "羲之爱鹅图-97x97cm.JPG", "title": "羲之爱鹅图", "chapter": "文人风骨", "size": "97x97cm"},
+        {"file": "羲之爱鹅图-尺寸138x70cm.JPG", "title": "羲之爱鹅图·横幅", "chapter": "文人风骨", "size": "138x70cm"},
+        {"file": "竹林七贤-尺寸138x70cm.jpg", "title": "竹林七贤", "chapter": "文人风骨", "size": "138x70cm"},
+        {"file": "竹林七贤二-尺寸138x70cm.jpg", "title": "竹林七贤·二", "chapter": "文人风骨", "size": "138x70cm"},
+        {"file": "饮中八仙-尺寸138x60cm.JPG", "title": "饮中八仙", "chapter": "文人风骨", "size": "138x60cm"},
+        {"file": "观沧海-尺寸138x70cm.JPG", "title": "观沧海", "chapter": "文人风骨", "size": "138x70cm"},
+        {"file": "观音-尺寸46x70cm.jpg", "title": "观音", "chapter": "神话仙佛", "size": "46x70cm"},
+        {"file": "观音菩萨-尺寸46x70cm.JPG", "title": "观音菩萨", "chapter": "神话仙佛", "size": "46x70cm"},
+        {"file": "普贤菩萨-尺寸46x70cm.JPG", "title": "普贤菩萨", "chapter": "神话仙佛", "size": "46x70cm"},
+        {"file": "善财童子-尺寸70x138cm.JPG", "title": "善财童子", "chapter": "神话仙佛", "size": "70x138cm"},
+        {"file": "八仙过海-尺寸180x97cm.jpg", "title": "八仙过海", "chapter": "神话仙佛", "size": "180x97cm"},
+        {"file": "伏虎图-70x70cm.jpg", "title": "伏虎图", "chapter": "神话仙佛", "size": "70x70cm"},
+        {"file": "武财神赵公明-尺寸70x138cm.JPG", "title": "武财神赵公明", "chapter": "神话仙佛", "size": "70x138cm"},
+        {"file": "惠安女-50x60cm.JPG", "title": "惠安女", "chapter": "市井百态", "size": "50x60cm"},
+        {"file": "惠安女-尺寸70x70cm.jpg", "title": "惠安女·二", "chapter": "市井百态", "size": "70x70cm"},
+        {"file": "赶集-尺寸70x46cm.jpg", "title": "赶集", "chapter": "市井百态", "size": "70x46cm"},
+        {"file": "春耕-尺寸70x46cm.jpg", "title": "春耕", "chapter": "市井百态", "size": "70x46cm"},
+        {"file": "年年有鱼-70x70cm.jpg", "title": "年年有鱼", "chapter": "市井百态", "size": "70x70cm"},
+        {"file": "寒江独钓-尺寸70x138cm.jpg", "title": "寒江独钓", "chapter": "市井百态", "size": "70x138cm"},
+        {"file": "陪伴-尺寸70x46cm.jpg", "title": "陪伴", "chapter": "市井百态", "size": "70x46cm"},
+        {"file": "泉-尺寸50x70cm.jpg", "title": "泉", "chapter": "市井百态", "size": "50x70cm"},
+        {"file": "霸王别姬-尺寸70x138cm.jpg", "title": "霸王别姬", "chapter": "市井百态", "size": "70x138cm"},
+        {"file": "中国梦-尺寸70x138cm.JPG", "title": "中国梦", "chapter": "市井百态", "size": "70x138cm"},
+        {"file": "都市白领-尺寸46x70cm.jpg", "title": "都市白领", "chapter": "时代人物", "size": "46x70cm"},
+        {"file": "白衣天使-70x70cm.jpeg", "title": "白衣天使", "chapter": "时代人物", "size": "70x70cm"},
+        {"file": "读书少女-尺寸70x46cm.jpg", "title": "读书少女", "chapter": "时代人物", "size": "70x46cm"},
+        {"file": "足球宝贝-尺寸70x100cm.jpg", "title": "足球宝贝", "chapter": "时代人物", "size": "70x100cm"},
+        {"file": "足球宝贝-70x138cm.jpg", "title": "足球宝贝·竖幅", "chapter": "时代人物", "size": "70x138cm"},
+        {"file": "父子情深-197x100cm.jpg", "title": "父子情深", "chapter": "时代人物", "size": "197x100cm"},
+        {"file": "父子情深-50x100cm.jpg", "title": "父子情深·小品", "chapter": "时代人物", "size": "50x100cm"},
+        {"file": "父子情深-尺寸138x70cm.jpg", "title": "父子情深·横幅", "chapter": "时代人物", "size": "138x70cm"},
+        {"file": "画坛三巨匠-197x100cm.jpg", "title": "画坛三巨匠", "chapter": "时代人物", "size": "197x100cm"},
+        {"file": "清眸-尺寸35x35cm.jpg", "title": "清眸", "chapter": "人物肖像", "size": "35x35cm"},
+        {"file": "思-70x70cm.JPG", "title": "思", "chapter": "人物肖像", "size": "70x70cm"},
+        {"file": "桃莉女士画像-尺寸46x70cm.jpg", "title": "桃莉女士画像", "chapter": "人物肖像", "size": "46x70cm"},
+        {"file": "春莲女士画像-尺寸46x70cm.jpg", "title": "春莲女士画像", "chapter": "人物肖像", "size": "46x70cm"},
+        {"file": "裸女-尺寸46x70cm.jpg", "title": "裸女", "chapter": "人物肖像", "size": "46x70cm"},
+        {"file": "少女与小猫-50x50cm.jpg", "title": "少女与小猫", "chapter": "人物肖像", "size": "50x50cm"}
+];
+
+const FLIP_DATA_TONGQU = [
+{"file": "人物_头像_1_001.jpg", "title": "人物 头像 1 001", "chapter": "人物头像", "size": ""},
+        {"file": "童趣_编号_002.jpg", "title": "童趣 编号 002", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_003.jpg", "title": "童趣 编号 003", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_005_副本_001.jpg", "title": "童趣 005 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "艺术品_扇面_001.jpg", "title": "艺术品 扇面 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "童趣_00001_2_副本_001.jpg", "title": "童趣 00001 2 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "人物_小女孩_1_001.jpg", "title": "人物 小女孩 1 001", "chapter": "童真世界", "size": ""},
+        {"file": "童趣_相机拍摄_1453.jpg", "title": "童趣 相机拍摄 1453", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v1_001.jpg", "title": "人物 头像 1 V1 001", "chapter": "人物头像", "size": ""},
+        {"file": "童趣_相机拍摄_0770.jpg", "title": "童趣 相机拍摄 0770", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0758.jpg", "title": "童趣 相机拍摄 0758", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0001.jpg", "title": "童趣 编号 0001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0774.jpg", "title": "童趣 相机拍摄 0774", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_004.jpg", "title": "童趣 编号 004", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_005.jpg", "title": "童趣 编号 005", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0749.jpg", "title": "童趣 相机拍摄 0749", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0761.jpg", "title": "童趣 相机拍摄 0761", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_1696.jpg", "title": "童趣 相机拍摄 1696", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v2_001.jpg", "title": "人物 头像 1 V2 001", "chapter": "人物头像", "size": ""},
+        {"file": "童趣_0001的_副本_001.jpg", "title": "童趣 0001的 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_007.jpg", "title": "童趣 编号 007", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_006.jpg", "title": "童趣 编号 006", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_007_副本_001.jpg", "title": "童趣 007 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0006.jpg", "title": "童趣 编号 0006", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_0006_副本_001.jpg", "title": "童趣 0006 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v3_001.jpg", "title": "人物 头像 1 V3 001", "chapter": "人物头像", "size": ""},
+        {"file": "艺术品_扇面_15_001.jpg", "title": "艺术品 扇面 15 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "季节_夏_001.jpg", "title": "季节 夏 001", "chapter": "四季童趣", "size": ""},
+        {"file": "童趣_相机拍摄_0658.jpg", "title": "童趣 相机拍摄 0658", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0005.jpg", "title": "童趣 编号 0005", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0011.jpg", "title": "童趣 编号 0011", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_003_副本_001.jpg", "title": "童趣 003 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v4_001.jpg", "title": "人物 头像 1 V4 001", "chapter": "人物头像", "size": ""},
+        {"file": "艺术品_扇面_8_001.jpg", "title": "艺术品 扇面 8 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "童趣_相机拍摄_0707.jpg", "title": "童趣 相机拍摄 0707", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_001_002.jpg", "title": "童趣 001 002", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0004.jpg", "title": "童趣 编号 0004", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0663.jpg", "title": "童趣 相机拍摄 0663", "chapter": "其他作品", "size": ""},
+        {"file": "宗教_佛像_001.jpg", "title": "宗教 佛像 001", "chapter": "作品精选", "size": ""},
+        {"file": "童趣_相机拍摄_0703.jpg", "title": "童趣 相机拍摄 0703", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_v1_0001.jpg", "title": "童趣 编号 V1 0001", "chapter": "其他作品", "size": ""},
+        {"file": "艺术品_扇面_13_001.jpg", "title": "艺术品 扇面 13 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "童趣_相机拍摄_0674.jpg", "title": "童趣 相机拍摄 0674", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0003.jpg", "title": "童趣 编号 0003", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_0004_副本_001.jpg", "title": "童趣 0004 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_11110.jpg", "title": "童趣 编号 11110", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0715.jpg", "title": "童趣 相机拍摄 0715", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_0002.jpg", "title": "童趣 编号 0002", "chapter": "其他作品", "size": ""},
+        {"file": "季节_秋_001.jpg", "title": "季节 秋 001", "chapter": "四季童趣", "size": ""},
+        {"file": "童趣_0001_副本_001.jpg", "title": "童趣 0001 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0718.jpg", "title": "童趣 相机拍摄 0718", "chapter": "其他作品", "size": ""},
+        {"file": "人物_鸣凤_1_001.jpg", "title": "人物 鸣凤 1 001", "chapter": "童真世界", "size": ""},
+        {"file": "童趣_相机拍摄_0731.jpg", "title": "童趣 相机拍摄 0731", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_004_副本_001.jpg", "title": "童趣 004 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_1110.jpg", "title": "童趣 编号 1110", "chapter": "其他作品", "size": ""},
+        {"file": "艺术品_扇面_1_001.jpg", "title": "艺术品 扇面 1 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "童趣_相机拍摄_0726.jpg", "title": "童趣 相机拍摄 0726", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_0001的_副本_v1_001.jpg", "title": "童趣 0001的 副本 V1 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0691.jpg", "title": "童趣 相机拍摄 0691", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_001.jpg", "title": "童趣 编号 001", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v5_001.jpg", "title": "人物 头像 1 V5 001", "chapter": "人物头像", "size": ""},
+        {"file": "寓意_和平鸽_001.jpg", "title": "寓意 和平鸽 001", "chapter": "作品精选", "size": ""},
+        {"file": "人物_明星_杨幂_1_001.jpg", "title": "人物 明星 杨幂 1 001", "chapter": "作品精选", "size": ""},
+        {"file": "艺术品_扇面_5_001.jpg", "title": "艺术品 扇面 5 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "童趣_相机拍摄_0737.jpg", "title": "童趣 相机拍摄 0737", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0723.jpg", "title": "童趣 相机拍摄 0723", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v6_001.jpg", "title": "人物 头像 1 V6 001", "chapter": "人物头像", "size": ""},
+        {"file": "季节_春_001.jpg", "title": "季节 春 001", "chapter": "四季童趣", "size": ""},
+        {"file": "艺术品_扇面_18_001.jpg", "title": "艺术品 扇面 18 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "季节_冬_001.jpg", "title": "季节 冬 001", "chapter": "四季童趣", "size": ""},
+        {"file": "童趣_0011_副本_001.jpg", "title": "童趣 0011 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_00001_副本_001.jpg", "title": "童趣 00001 副本 001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0721.jpg", "title": "童趣 相机拍摄 0721", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_编号_00001.jpg", "title": "童趣 编号 00001", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0697.jpg", "title": "童趣 相机拍摄 0697", "chapter": "其他作品", "size": ""},
+        {"file": "艺术品_扇面_v1_001.jpg", "title": "艺术品 扇面 V1 001", "chapter": "扇面雅韵", "size": ""},
+        {"file": "故事_孺子牛_1_001.jpg", "title": "故事 孺子牛 1 001", "chapter": "作品精选", "size": ""},
+        {"file": "童趣_相机拍摄_1459.jpg", "title": "童趣 相机拍摄 1459", "chapter": "其他作品", "size": ""},
+        {"file": "人物_头像_1_v7_001.jpg", "title": "人物 头像 1 V7 001", "chapter": "人物头像", "size": ""},
+        {"file": "童趣_相机拍摄_1470.jpg", "title": "童趣 相机拍摄 1470", "chapter": "其他作品", "size": ""},
+        {"file": "场景_荷塘采莲_1_001.jpg", "title": "场景 荷塘采莲 1 001", "chapter": "作品精选", "size": ""},
+        {"file": "故事_孺子牛_2_001.jpg", "title": "故事 孺子牛 2 001", "chapter": "作品精选", "size": ""},
+        {"file": "童趣_相机拍摄_0744.jpg", "title": "童趣 相机拍摄 0744", "chapter": "其他作品", "size": ""},
+        {"file": "场景_渔趣_1_001.jpg", "title": "场景 渔趣 1 001", "chapter": "作品精选", "size": ""},
+        {"file": "人物_小女孩_4_001.jpg", "title": "人物 小女孩 4 001", "chapter": "童真世界", "size": ""},
+        {"file": "童趣_相机拍摄_0779.jpg", "title": "童趣 相机拍摄 0779", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_1701.jpg", "title": "童趣 相机拍摄 1701", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0741.jpg", "title": "童趣 相机拍摄 0741", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_1463.jpg", "title": "童趣 相机拍摄 1463", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_00001_002.jpg", "title": "童趣 00001 002", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0754.jpg", "title": "童趣 相机拍摄 0754", "chapter": "其他作品", "size": ""},
+        {"file": "童趣_相机拍摄_0636.jpg", "title": "童趣 相机拍摄 0636", "chapter": "其他作品", "size": ""},
+        {"file": "故事_为官图_1_001.jpg", "title": "故事 为官图 1 001", "chapter": "作品精选", "size": ""},
+        {"file": "艺术品_扇面_46_001.jpg", "title": "艺术品 扇面 46 001", "chapter": "扇面雅韵", "size": ""}
+];
+
+// ========== STATE ==========
+let currentVolume = 'renwu';
+let currentMode = 'grid';
+let lbIndex = -1;
+let flipIndex = 0;
+
+function getCurrentData() {
+    return currentVolume === 'renwu' ? FLIP_DATA_RENWU : FLIP_DATA_TONGQU;
+}
+
+function imgPath(f) {
+    if (currentVolume === 'renwu') {
+        return './web/' + f;
+    } else {
+        return './web_tongqu/' + f;
+    }
+}
+
+// ========== VOLUME SWITCH ==========
+function switchVolume(vol) {
+    if (currentVolume === vol) return;
+    
+    // Close any open overlays
+    closeLightbox();
+    closeFlip();
+    
+    // Update state
+    currentVolume = vol;
+    
+    // Update tabs
+    document.querySelectorAll('.volume-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.volume === vol);
+    });
+    
+    // Show/hide containers
+    document.getElementById('volume-renwu').classList.toggle('active', vol === 'renwu');
+    document.getElementById('volume-tongqu').classList.toggle('active', vol === 'tongqu');
+    
+    // Reset mode buttons
+    document.querySelectorAll('.nav-modes button').forEach(b => b.classList.remove('active'));
+    document.getElementById('btnGrid').classList.add('active');
+    document.getElementById('btnGrid-tongqu')?.classList.add('active');
+    if (document.getElementById('btnGrid2')) document.getElementById('btnGrid2').classList.add('active');
+    currentMode = 'grid';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Reset hash
+    history.replaceState(null, '', '#cover');
+    
+    // Re-initialize scroll listener elements for the new volume
+    initNavForVolume();
+}
+
+function initNavForVolume() {
+    // Re-bind nav elements (they get recreated when switching)
+    setTimeout(() => {
+        const volEl = document.getElementById(currentVolume === 'renwu' ? 'volume-renwu' : 'volume-tongqu');
+        // The nav and cover are inside the volume container
+    }, 100);
+}
+
+// ========== NAV SCROLL ==========
+window.addEventListener('scroll', () => {
+    // Find nav in active volume
+    const volEl = document.getElementById('volume-' + currentVolume);
+    const navEl = volEl ? volEl.querySelector('.nav') : null;
+    if (navEl) {
+        navEl.classList.toggle('visible', window.scrollY > window.innerHeight * 0.7);
+    }
+    const backTop = document.getElementById('backTop');
+    backTop.classList.toggle('visible', window.scrollY > 800);
+});
+
+// ========== MODE ==========
+function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.nav-modes button').forEach(b => b.classList.remove('active'));
+    if (mode === 'grid') {
+        // Activate btnGrid in ALL nav instances (volume nav + flip topbar)
+        document.querySelectorAll('#btnGrid, #btnGrid-tongqu, #btnGrid2').forEach(b => b.classList.add('active'));
+        closeFlip();
+    } else {
+        document.querySelectorAll('#btnFlip, #btnFlip-tongqu, #btnFlip2').forEach(b => b.classList.add('active'));
+        openFlip(0);
+    }
+}
+
+// ========== LIGHTBOX ==========
+const lightbox = document.getElementById('lightbox');
+const lbImg = document.getElementById('lbImg');
+const lbCaption = document.getElementById('lbCaption');
+const lbCounter = document.getElementById('lbCounter');
+
+// 点击大图区域关闭灯箱
+lbImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeLightbox();
+});
+// 点击灯箱背景关闭
+lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+});
+
+let lbManual = false;
+function openLightbox(filename, title, chapter, size) {
+    // 直接用传入参数显示大图（不依赖 FLIP_DATA 查找）
+    lbImg.src = imgPath(filename);
+    const sz = size ? '　尺寸：' + size : '';
+    lbCaption.textContent = title + (chapter ? ' · ' + chapter : '') + sz;
+    
+    // 尝试在数据中查找索引，用于前进/后退导航和计数器
+    const data = getCurrentData();
+    const idx = data.findIndex(d => d.file === filename);
+    lbIndex = idx;
+    lbManual = (idx < 0);
+    
+    if (idx >= 0) {
+        lbCounter.textContent = (idx + 1) + ' / ' + data.length;
+    } else {
+        lbCounter.textContent = '';
+    }
+    
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showLightboxItem() {
+    if (lbManual) return;
+    const data = getCurrentData();
+    if (lbIndex < 0 || lbIndex >= data.length) return;
+    const d = data[lbIndex];
+    lbImg.src = imgPath(d.file);
+    const sz = d.size ? '　尺寸：' + d.size : '';
+    lbCaption.textContent = d.title + (d.chapter ? ' · ' + d.chapter : '') + sz;
+    lbCounter.textContent = (lbIndex + 1) + ' / ' + data.length;
+}
+
+function lbNav(dir) {
+    if (lbManual) return;
+    const data = getCurrentData();
+    lbIndex = (lbIndex + dir + data.length) % data.length;
+    showLightboxItem();
+}
+
+function closeLightbox() {
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    lbManual = false;
+}
+
+// ========== FLIP MODE ==========
+const flipMode = document.getElementById('flipMode');
+const flipImg = document.getElementById('flipImg');
+const flipTitle = document.getElementById('flipTitle');
+const flipSize = document.getElementById('flipSize');
+const flipChapter = document.getElementById('flipChapter');
+const flipProgress = document.getElementById('flipProgress');
+const flipTopLabel = document.getElementById('flipTopLabel');
+
+function openFlip(idx) {
+    flipIndex = idx || 0;
+    showFlipItem();
+    flipMode.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function showFlipItem() {
+    const data = getCurrentData();
+    const d = data[flipIndex];
+    flipImg.classList.add('fade-out');
+    setTimeout(() => {
+        flipImg.src = imgPath(d.file);
+        flipImg.classList.remove('fade-out');
+    }, 150);
+    flipTitle.textContent = d.title;
+    flipSize.textContent = d.size ? '尺寸：' + d.size : '';
+    flipChapter.textContent = (d.chapter ? d.chapter + '　' : '') + (flipIndex + 1) + '/' + data.length;
+    flipProgress.style.width = ((flipIndex + 1) / data.length * 100) + '%';
+    if (flipTopLabel) flipTopLabel.textContent = (currentVolume === 'renwu' ? '人物卷' : '童趣卷') + ' · 全幅浏览';
+}
+
+function flipNav(dir) {
+    const data = getCurrentData();
+    flipIndex = (flipIndex + dir + data.length) % data.length;
+    showFlipItem();
+}
+
+function closeFlip() {
+    flipMode.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', (e) => {
+    if (lightbox.classList.contains('active')) {
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') lbNav(-1);
+        if (e.key === 'ArrowRight') lbNav(1);
+        return;
+    }
+    if (flipMode.classList.contains('active')) {
+        if (e.key === 'Escape') closeFlip();
+        if (e.key === 'ArrowLeft') flipNav(-1);
+        if (e.key === 'ArrowRight') flipNav(1);
+        return;
+    }
+});
+
+// ========== TOUCH SWIPE ==========
+let touchStartX = 0;
+document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', (e) => {
+    if (!flipMode.classList.contains('active')) return;
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) flipNav(diff > 0 ? 1 : -1);
+});
+
+// ========== CHAPTER NAV ACTIVE STATE ==========
+window.addEventListener('scroll', () => {
+    const volEl = document.getElementById('volume-' + currentVolume);
+    if (!volEl) return;
+    const sections = volEl.querySelectorAll('.section[id]');
+    let current = '';
+    sections.forEach(s => {
+        const top = s.getBoundingClientRect().top + window.scrollY - 100;
+        if (window.scrollY >= top) current = s.id;
+    });
+    volEl.querySelectorAll('.chapter-nav a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+});
+
+// ========== MOBILE NAV TOGGLE ==========
+function toggleNav() {
+    const volEl = document.getElementById('volume-' + currentVolume);
+    const links = volEl ? volEl.querySelector('.nav-links') : document.getElementById('navLinks');
+    if (links) {
+        links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+    }
+}
+
+// ========== INIT ==========
+console.log('电子画册已就绪 — 人物卷 (' + FLIP_DATA_RENWU.length + ' 幅) + 童趣卷 (' + FLIP_DATA_TONGQU.length + ' 幅)');
+</script>
+
+</body>
+</html>
